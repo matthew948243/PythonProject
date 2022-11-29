@@ -93,7 +93,7 @@ class ACTWind(QMainWindow):
                 rocketWriteCasePath=workpath + "/" + self.rocket_name + ".cas.h5"
             )
             f2.write(newstr)
-
+    ###########
     # 多工况脚本命令创建
     def WriteMultiCmd(self):
 
