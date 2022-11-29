@@ -1,0 +1,15 @@
+# encoding: utf-8
+# 2021 R2
+SetScriptVersion(Version="21.2.209")
+template1 = GetTemplate(TemplateName="Fluid Flow with Fluent Meshing")
+system1 = template1.CreateSystem()
+geometry1 = system1.GetContainer(ComponentName="Geometry")
+geometry1.SetFile(FilePath="D:/WorkBench/PythonProject/rocket/rocket.scdoc")
+setup1 = system1.GetContainer(ComponentName="Setup")
+fluentLauncherSettings1 = setup1.GetFluentLauncherSettings()
+fluentLauncherSettings1.SetEntityProperties(Properties=Set(NumberOfProcessorsMeshing=4, EnvPath={}))
+tGridData1 = GetDataEntity("/Mesh/TGridData:TGridData")
+tGridData1.SetEntityProperties(Properties=Set(NumberOfProcs=4, RunParallel=True))
+geometry1.Edit(IsSpaceClaimGeometry=True)
+Save(Overwrite=True)
+geometry1.Exit()

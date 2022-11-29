@@ -1,0 +1,53 @@
+# encoding: utf-8
+# 2021 R2
+SetScriptVersion(Version="21.2.209")
+system1 = GetSystem(Name="FFF")
+setup1 = system1.GetContainer(ComponentName="Setup")
+fluentLauncherSettings1 = setup1.GetFluentLauncherSettings()
+fluentLauncherSettings1.SetEntityProperties(Properties=Set(EnvPath={}))
+tGridData1 = GetDataEntity("/Mesh/TGridData:TGridData")
+tGridData1.SetEntityProperties(Properties=Set(NumberOfProcs=4, RunParallel=True))
+mesh1 = system1.GetContainer(ComponentName="Mesh")
+Fluent.Edit(Container=mesh1)
+setup1.SendCommand(Command='(cx-gui-do cx-activate-tab-index "NavigationPane*Frame1(TreeTab)" 0)(cx-gui-do cx-activate-tab-index "NavigationPane*Frame1(TreeTab)" 1)')
+meshComponent1 = system1.GetComponent(Name="Mesh")
+meshComponent1.Refresh()
+setup1.SendCommand(Command="""
+/file/import/cad-options/tessellation  cfd-surface-mesh no 0.5 5 18 no no
+/file/import/cad yes \"D:/WorkBench/SimpleModel/rocket.scdoc\" yes 40 yes mm
+/scoped-sizing/create \"control-1\" boi object-faces yes yes *boi* 8 1.2
+/scoped-sizing/compute
+/file/write-size-field \"D:/WorkBench/SimpleModel/tempsize.sf\" ok
+/file/import/cad-options/tessellation  cfd-surface-mesh yes \"D:/WorkBench/SimpleModel/tempsize.sf\"
+/file/import/cad yes \"D:/WorkBench/SimpleModel/rocket.scdoc\" no yes 40 yes mm ok
+/objects/volumetric-regions/compute *myfluideeclosuretobecuted* no
+/objects/volumetric-regions/rename * *myfluideeclosuretobecuted* *myfluideeclosuretobecuted* myfluid
+/objects/volumetric-regions/change-type *myfluideeclosuretobecuted* * () fluid
+/boundary/manage/type inlet* () velocity-inlet
+/boundary/manage/type outlet* () pressure-outlet
+/objects/volumetric-regions/scoped-prism/set/create \"control-1\" aspect-ratio 5 1 1.2 myfluideeclosuretobecutedcomponent:myfluideeclosuretobecutedcomponent-myfluideeclosuretobecuted1 fluid-regions selected-labels *wall*
+/mesh/auto-mesh * no  scoped  pyramids hexcore  yes
+/report/cell-quality-limits *()
+/switch-to-solution-mode yes
+/define/models/viscous/ke-realizable? yes
+/define/models/viscous/near-wall-treatment enhanced-wall-treatment? yes quit
+/define/boundary-conditions/fluid myfluid no no no no no 0 no 0 no 0 no 0 no 0 no 0 no no no no no 
+/define/boundary-conditions/set/velocity-inlet *inlet_velocity* () vmag no 3 quit
+/define/models/energy? yes no no no yes
+/define/boundary-conditions/set/velocity-inlet *inlet_velocity* () temperature no 290 quit
+/define/boundary-conditions/set/pressure-outlet *outlet_pressure* () gauge-pressure no 100 quit 
+/solve/report-definitions/add out-vel-rdef surface-areaavg surface-names *outlet_pressure* () field velocity-magnitude quit 
+/solve/report-plots/add out-vel-rplot report-defs out-vel-rdef () quit
+/display/surface/plane-surface xz-plane-0 zx-plane 0
+/file/write-case-data \"D:/WorkBench/SimpleModel/rocket1.cas.h5\" ok
+/solve/iterate 100 
+/display/objects/create contour vel-mid surfaces-list xz-plane-0 () field velocity-magnitude quit
+""")
+Save(Overwrite=True)
+setup1.SendCommand(Command='(cx-gui-do cx-activate-tab-index "NavigationPane*Frame1(TreeTab)" 0)(cx-gui-do cx-activate-tab-index "NavigationPane*Frame1(TreeTab)" 1)')
+setup1.SendCommand(Command='/file/set-tui-version "21.2"(cx-gui-do cx-activate-tab-index "NavigationPane*Frame1(TreeTab)" 0)')
+setup1.SendCommand(Command="(%py-exec \"workflow.LoadState(ListOfRoots=[r'meshing', r'workflow'])\")")
+setup1.SendCommand(Command="(newline)")
+setup1.SendCommand(Command="""(cx-use-window-id 1)(cx-set-camera-relative '(-9565.76 -719.614 -663.391) '(0 0 0) '(0.0840411 -0.546793 -0.395143) 0 0)(cx-use-window-id 1)(cx-set-camera-relative '(-626.439 -894.379 -1859.97) '(0 0 0) '(0.68332 -0.360816 -0.0473662) 0 0)(cx-use-window-id 51)(handle-key \"??\")(cx-use-window-id 51)(cx-set-camera '(-645.78 1369.38 -386.54) '(290.316 1095.57 -62.7496) '(0.278854 -0.165334 -0.945994) 290.667 290.667 \"perspective\")
+(cx-use-window-id 51)(cx-set-camera-relative '(6727.68 -2404.79 9600.08) '(0 0 0) '(-1.22342 0.492352 0.975268) 0 0)(cx-use-window-id 51)(cx-set-camera-relative '(-1936.02 -3313.13 -1317.34) '(0 0 0) '(0.0225298 0.0573834 -0.0749703) 0 0)""")
+setup1.SendCommand(Command="(cx-gui-do cx-activate-item \"MenuBar*FileMenu*Close Fluent\")(cx-gui-do cx-set-toggle-button2 \"Settings have changed!*Table1*ToggleBox2*Use settings changes for current and future calculations\" #t)(cx-gui-do cx-activate-item \"Settings have changed!*Table1*ToggleBox2*Use settings changes for current and future calculations\")(cx-gui-do cx-set-toggle-button2 \"Settings have changed!*Table1*ToggleBox2*Don't Save changes and exit\" #t)(cx-gui-do cx-activate-item \"Settings have changed!*Table1*ToggleBox2*Don't Save changes and exit\")(cx-gui-do cx-activate-item \"Settings have changed!*PanelButtons*PushButton1(OK)\")")

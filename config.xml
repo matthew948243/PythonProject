@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Root>
+	<worbenchpath>D:\Program Files\ANSYS Inc\v202\Framework\bin\Win64\RunWB2.exe</worbenchpath>
+	<fluentpath>D:\Program Files\ANSYS Inc\v202\fluent\ntbin\win64\fluent.exe</fluentpath>
+	<spaceclaimpath>D:\Program Files\ANSYS Inc\v202\SCDM\SpaceClaim.exe</spaceclaimpath>
+	<raw_model>D:/WorkBench/SimpleModel/asm0001.scdoc</raw_model>
+	<defaultProjectPath>D:/WorkBench/SimpleModel</defaultProjectPath>
+	<defaultRocketPath>D:/WorkBench/SimpleModel/rocket.scdoc</defaultRocketPath>
+</Root>
