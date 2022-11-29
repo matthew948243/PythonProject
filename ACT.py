@@ -91,9 +91,8 @@ class ACTWind(QMainWindow):
                 iterNum=self.ui.iterNumlineEdit.text(), rocketPath=self.ui.rocketPathLinedit.text().replace("\\", "/"),
                 rockettempsizepath=workpath + "/tempsize.sf",
                 rocketWriteCasePath=workpath + "/" + self.rocket_name + ".cas.h5"
-            )
+            )       
             f2.write(newstr)
-    ###########
     # 多工况脚本命令创建
     def WriteMultiCmd(self):
 
