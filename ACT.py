@@ -26,6 +26,7 @@ import xmloperation as XML
 class ACTWind(QMainWindow):
     def __init__(self, parent=None):
         super(ACTWind, self).__init__(parent)
+        # super().__init__(parent)
         self.rocket_name = None
         self.rocket_SCdoc = None
         self.spaceclaimpath = None
@@ -358,10 +359,52 @@ DocumentOpen.Execute("{0}", importOptions)
         cls.__indent(root)
         tree.write("config.xml", encoding='utf-8', xml_declaration=True)
 
+#
+# if __name__ == "__main__":
+#     qApp = QApplication(sys.argv)
+#     mainwind = ACTWind()
+#     mainwind.show()
+#     sys.exit(qApp.exec_())
 
-if __name__ == "__main__":
-    qApp = QApplication(sys.argv)
-    mainwind = ACTWind()
-    mainwind.show()
-    sys.exit(qApp.exec_())
 
+import re
+
+pat="(\{[\s*\u4e00-\u9fa5\s*\w+]{1,}\}){1,}"
+myst="scoped-sizing/create  boi object-faces yes yes *boi* {boiSize} 1.2{ 何时去额为}kjk"
+print(re.findall(pat, myst))
+myst="""
+/scoped-sizing/create \"control-1\" boi object-faces yes yes *boi* {boiSize} 1.2
+/scoped-sizing/compute
+/file/write-size-field \"{rockettempsizepath}\" ok
+/file/import/cad-options/tessellation  cfd-surface-mesh yes \"{rockettempsizepath}\"
+/file/import/cad yes \"{RocketDp0File}\" no yes 40 yes mm ok
+/objects/volumetric-regions/compute *myfluideeclosuretobecuted* no
+/objects/volumetric-regions/rename * *myfluideeclosuretobecuted* *myfluideeclosuretobecuted* myfluid
+/objects/volumetric-regions/change-type *myfluideeclosuretobecuted* * () fluid
+/boundary/manage/type inlet* () velocity-inlet
+/boundary/manage/type outlet* () pressure-outlet
+/objects/volumetric-regions/scoped-prism/set/create "control-1" aspect-ratio {firstAspectRatio} {boundaryNum} 1.2 myfluideeclosuretobecutedcomponent:myfluideeclosuretobecutedcomponent-myfluideeclosuretobecuted1 fluid-regions selected-labels *wall*
+/mesh/auto-mesh * no  scoped  pyramids hexcore  yes
+/report/cell-quality-limits *()
+/switch-to-solution-mode yes
+/define/models/viscous/ke-realizable? yes
+/define/models/viscous/near-wall-treatment enhanced-wall-treatment? yes quit
+/define/boundary-conditions/fluid myfluid no no no no no 0 no 0 no 0 no 0 no 0 no 0 no no no no no
+/define/boundary-conditions/set/velocity-inlet *inlet_velocity* () vmag no {inletVelocity} quit
+/define/models/energy? yes no no no yes
+/define/boundary-conditions/set/velocity-inlet *inlet_velocity* () temperature no {inletTemp} quit
+/define/boundary-conditions/set/pressure-outlet *outlet_pressure* () gauge-pressure no {outPressurelineEdit} quit
+/solve/report-definitions/add out-vel-rdef surface-areaavg surface-names *outlet_pressure* () field velocity-magnitude quit
+/solve/report-plots/add out-vel-rplot report-defs out-vel-rdef () quit
+/display/surface/plane-surface xz-plane-0 zx-plane 0
+/file/write-case-data "{rocketWriteCasePath}" ok
+/solve/iterate {iterNum}
+/display/objects/create contour vel-mid surfaces-list xz-plane-0 () field velocity-magnitude quit
+"""
+
+
+
+print(re.findall(pat, myst))
+astr = '''aaaaa何时when 杖尔看see南雪snow，我me与梅花plum blossom两白头'''
+res = re.findall('[\u4e00-\u9fa5]{1,3}', astr)
+print(res)
