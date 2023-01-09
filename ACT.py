@@ -11,6 +11,7 @@ import socket
 import getpass
 import xlrd
 import UIVaribles
+import re
 
 if hasattr(sys, 'frozen'):
     os.environ['PATH'] = sys._MEIPASS + ";" + os.environ['PATH']
@@ -48,6 +49,8 @@ class ACTWind(QMainWindow):
         self.ui.rawmodellineEdit.setText(self.raw_model)
 
         self.temppath = (self.GetUserInfo()[0] + "\\myrockettemp.bat").replace("\\", "/")
+    def __str__(self):
+        return "mand"
     #反写新到xml中
     def modifynodetext(self,nodepath,newStr):
         tree = XML.read_xml("config.xml")
@@ -97,7 +100,8 @@ class ACTWind(QMainWindow):
     # 多工况脚本命令创建
     def WriteMultiCmd(self):
 
-        with open("./workbenchMultiCasesRawStr.py", "r", encoding="utf-8") as f1, open("./workbenchMultiCases.py", "w",
+        self.multiRawStr=self.ui.projectPathLinedit.text()+"/workbenchMultiCases.py"
+        with open("./workbenchMultiCasesRawStr.py", "r", encoding="utf-8") as f1, open( self.multiRawStr, "w",
                                                                                        encoding="utf-8") as f2:
             workpath = self.ui.projectPathLinedit.text().replace("\\", "/")
             rawStr = f1.read()
@@ -179,6 +183,7 @@ DocumentOpen.Execute("{0}", importOptions)
         if path=="":
             return
         self.modifynodetext("defaultProjectPath", path.replace("\\", "/"))
+        self.defaultProjectPath=self.ui.projectPathLinedit.text()
     # 选择火箭模型处理完后的保存目录事件
     @pyqtSlot()
     def on_rocketPathBtn_clicked(self):
@@ -251,31 +256,49 @@ DocumentOpen.Execute("{0}", importOptions)
 
 
     # 进行多工况计算的按钮事件
+    #禁止切换python版本为3.10,应该用3.7一下
     @pyqtSlot()
     def on_multiCaseBtn_clicked(self):
-        if str(self.ui.multiCasesExcellineEdit.text()) == "":
-            QMessageBox.critical(self, "输入信息缺失", "请确保\"多工况输入文件\"路径不为空")
-            return
-        self.readMultiCaseExcel(self.ui.multiCasesExcellineEdit.text().replace("\\", "/"))
+        # if str(self.ui.multiCasesExcellineEdit.text()) == "":
+        #     QMessageBox.critical(self, "输入信息缺失", "请确保\"多工况输入文件\"路径不为空")
+        #     return
+        # self.readMultiCaseExcel(self.ui.multiCasesExcellineEdit.text().replace("\\", "/"))
+        #
+        # path = self.ui.rocketPathLinedit.text().replace("\\", "/")
+        # if path == "":
+        #     return
+        #
+        # self.rocket_SCdoc = str(os.path.dirname(path))
+        # path = self.ui.rocketPathLinedit.text().replace("\\", "/")
+        # ret = os.path.splitext(path)[0]
+        # self.rocket_name = str(os.path.basename(ret))
 
-        path = self.ui.rocketPathLinedit.text().replace("\\", "/")
-        if path == "":
-            return
 
-        self.rocket_SCdoc = str(os.path.dirname(path))
-        path = self.ui.rocketPathLinedit.text().replace("\\", "/")
-        ret = os.path.splitext(path)[0]
-        self.rocket_name = str(os.path.basename(ret))
+        # self.WriteMultiCmd()
 
+        # tree = XML.read_xml("config.xml")
+        #
+        # nodes = XML.find_nodes(tree, "worbenchpath")
+        # worbenchpath = nodes[0].text
+        # cmdBat = self.defaultProjectPath + "/run.bat"
 
-        self.WriteMultiCmd()
+        worbenchpath = "D:/Program Files/ANSYS Inc/v202/Framework/bin/Win64/RunWB2.exe"
+        cmdBat="D:/WorkBench/newtest1/run.bat"
 
-        tree = XML.read_xml("config.xml")
+        # cmdstr = "\"" + worbenchpath + "\"" + " -I -R "+self.multiRawStr
+        cmdstr = "\"" + worbenchpath + "\"" + " -I -R " + "D:/WorkBench/newtest1/workbenchMultiCases.py"
 
-        nodes = XML.find_nodes(tree, "worbenchpath")
-        worbenchpath = nodes[0].text
-        cmdstr = "\"" + worbenchpath + "\"" + " -I -R \".\\workbenchMultiCases.py\""
-        subprocess.Popen(cmdstr, shell=True, stdout=None, stderr=None)
+        # with open(cmdBat, "w",encoding="utf-8") as f2:
+        #     f2.write(cmdstr)
+        # os.system(cmdBat)
+        opt=0
+        if (opt==0):
+            subprocess.Popen(cmdBat, shell=True, stdout=None, stderr=None)
+        elif (opt==1):
+            subprocess.Popen(cmdstr, shell=True, stdout=None, stderr=None)
+        else:
+            subprocess.Popen("\"D:\\Program Files\\ANSYS Inc\\v202\Framework\\bin\Win64\RunWB2.exe\" -I -R \"D:/WorkBench/newtest1/workbenchMultiCases.py\"", shell=True, stdout=None, stderr=None)
+
 
     # 读取多工况Excel文件
     def readMultiCaseExcel(self, path):
@@ -359,52 +382,57 @@ DocumentOpen.Execute("{0}", importOptions)
         cls.__indent(root)
         tree.write("config.xml", encoding='utf-8', xml_declaration=True)
 
+
+if __name__ == "__main__":
+    qApp = QApplication(sys.argv)
+    mainwind = ACTWind()
+    mainwind.show()
+    # print(mainwind)
+    sys.exit(qApp.exec_())
+
 #
-# if __name__ == "__main__":
-#     qApp = QApplication(sys.argv)
-#     mainwind = ACTWind()
-#     mainwind.show()
-#     sys.exit(qApp.exec_())
-
-
-import re
-
-pat="(\{[\s*\u4e00-\u9fa5\s*\w+]{1,}\}){1,}"
-myst="scoped-sizing/create  boi object-faces yes yes *boi* {boiSize} 1.2{ 何时去额为}kjk"
-print(re.findall(pat, myst))
-myst="""
-/scoped-sizing/create \"control-1\" boi object-faces yes yes *boi* {boiSize} 1.2
-/scoped-sizing/compute
-/file/write-size-field \"{rockettempsizepath}\" ok
-/file/import/cad-options/tessellation  cfd-surface-mesh yes \"{rockettempsizepath}\"
-/file/import/cad yes \"{RocketDp0File}\" no yes 40 yes mm ok
-/objects/volumetric-regions/compute *myfluideeclosuretobecuted* no
-/objects/volumetric-regions/rename * *myfluideeclosuretobecuted* *myfluideeclosuretobecuted* myfluid
-/objects/volumetric-regions/change-type *myfluideeclosuretobecuted* * () fluid
-/boundary/manage/type inlet* () velocity-inlet
-/boundary/manage/type outlet* () pressure-outlet
-/objects/volumetric-regions/scoped-prism/set/create "control-1" aspect-ratio {firstAspectRatio} {boundaryNum} 1.2 myfluideeclosuretobecutedcomponent:myfluideeclosuretobecutedcomponent-myfluideeclosuretobecuted1 fluid-regions selected-labels *wall*
-/mesh/auto-mesh * no  scoped  pyramids hexcore  yes
-/report/cell-quality-limits *()
-/switch-to-solution-mode yes
-/define/models/viscous/ke-realizable? yes
-/define/models/viscous/near-wall-treatment enhanced-wall-treatment? yes quit
-/define/boundary-conditions/fluid myfluid no no no no no 0 no 0 no 0 no 0 no 0 no 0 no no no no no
-/define/boundary-conditions/set/velocity-inlet *inlet_velocity* () vmag no {inletVelocity} quit
-/define/models/energy? yes no no no yes
-/define/boundary-conditions/set/velocity-inlet *inlet_velocity* () temperature no {inletTemp} quit
-/define/boundary-conditions/set/pressure-outlet *outlet_pressure* () gauge-pressure no {outPressurelineEdit} quit
-/solve/report-definitions/add out-vel-rdef surface-areaavg surface-names *outlet_pressure* () field velocity-magnitude quit
-/solve/report-plots/add out-vel-rplot report-defs out-vel-rdef () quit
-/display/surface/plane-surface xz-plane-0 zx-plane 0
-/file/write-case-data "{rocketWriteCasePath}" ok
-/solve/iterate {iterNum}
-/display/objects/create contour vel-mid surfaces-list xz-plane-0 () field velocity-magnitude quit
-"""
-
-
-
-print(re.findall(pat, myst))
-astr = '''aaaaa何时when 杖尔看see南雪snow，我me与梅花plum blossom两白头'''
-res = re.findall('[\u4e00-\u9fa5]{1,3}', astr)
-print(res)
+#
+#
+# # pat="(\{[\s*\u4e00-\u9fa5\s*\w+\s*]{1,}\}){1,}"
+# pat = "\{.*?\}"
+# myst="scoped-sizing/create  boi object-faces yes yes *boi* {boiSize} 1.2{ 何时去额为 we}kjk"
+# print(re.findall(pat, myst))
+# myst="""
+# /scoped-sizing/create \"control-1\" boi object-faces yes yes *boi* {boiSize} 1.2
+# /scoped-sizing/compute
+# /file/write-size-field \"{rockettempsizepath}\" ok
+# /file/import/cad-options/tessellation  cfd-surface-mesh yes \"{rockettempsizepath}\"
+# /file/import/cad yes \"{RocketDp0File}\" no yes 40 yes mm ok
+# /objects/volumetric-regions/compute *myfluideeclosuretobecuted* no
+# /objects/volumetric-regions/rename * *myfluideeclosuretobecuted* *myfluideeclosuretobecuted* myfluid
+# /objects/volumetric-regions/change-type *myfluideeclosuretobecuted* * () fluid
+# /boundary/manage/type inlet* () velocity-inlet
+# /boundary/manage/type outlet* () pressure-outlet
+# /objects/volumetric-regions/scoped-prism/set/create "control-1" aspect-ratio {firstAspectRatio} {boundaryNum} 1.2 myfluideeclosuretobecutedcomponent:myfluideeclosuretobecutedcomponent-myfluideeclosuretobecuted1 fluid-regions selected-labels *wall*
+# /mesh/auto-mesh * no  scoped  pyramids hexcore  yes
+# /report/cell-quality-limits *()
+# /switch-to-solution-mode yes
+# /define/models/viscous/ke-realizable? yes
+# /define/models/viscous/near-wall-treatment enhanced-wall-treatment? yes quit
+# /define/boundary-conditions/fluid myfluid no no no no no 0 no 0 no 0 no 0 no 0 no 0 no no no no no
+# /define/boundary-conditions/set/velocity-inlet *inlet_velocity* () vmag no {inletVelocity} quit
+# /define/models/energy? yes no no no yes
+# /define/boundary-conditions/set/velocity-inlet *inlet_velocity* () temperature no {inletTemp} quit
+# /define/boundary-conditions/set/pressure-outlet *outlet_pressure* () gauge-pressure no {outPressurelineEdit} quit
+# /solve/report-definitions/add out-vel-rdef surface-areaavg surface-names *outlet_pressure* () field velocity-magnitude quit
+# /solve/report-plots/add out-vel-rplot report-defs out-vel-rdef () quit
+# /display/surface/plane-surface xz-plane-0 zx-plane 0
+# /file/write-case-data "{rocketWriteCasePath}" ok
+# /solve/iterate {iterNum}
+# /display/objects/create contour vel-mid surfaces-list xz-plane-0 () field velocity-magnitude quit
+# """
+# print(re.findall(pat, myst))
+# print("heolllllllllllllllllllllllllllllll")
+# print(re.match('www', 'www.runoob.com').span())  # 在起始位置匹配
+# print(re.match('com', 'www.runoob.com'))
+#
+# phone = "2004-959-559 # 这是一个电话号码"
+#
+# # 删除注释
+# num = re.sub(r'#.*$', "", phone)
+# print("电话号码 : ", num)

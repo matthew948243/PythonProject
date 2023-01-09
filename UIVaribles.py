@@ -24,8 +24,8 @@ outPressurelineEdit=100
 
 iterNum=100
 
-totalheight=[1393.4, 1493.4, 1593.4]
-rocketMoveHeight=[100.0, 200.0, 300.0]
-rotationDeg=[5.0, 15.0, 25.0]
+totalheight=[1393.4, 1493.4]
+rocketMoveHeight=[100.0, 200.0]
+rotationDeg=[5.0, 15.0]
 
 FluidCMD="D:/WorkBench/SimpleModel/result.csv"

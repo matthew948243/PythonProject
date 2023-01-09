@@ -1,0 +1,60 @@
+/file/import/cad-options/tessellation  cfd-surface-mesh no 3 35 18 no no
+/file/import/cad yes  D:/WorkBench/mutlicase/case1/rocket.scdoc yes 40 yes mm
+/scoped-sizing/delete-size-field
+/scoped-sizing/create control-1 boi object-faces yes yes *boi* 3 1.2
+/scoped-sizing/compute
+/file/write-size-field D:/WorkBench/mutlicase/case1/tempsize.sf
+/file/import/cad-options/tessellation  cfd-surface-mesh yes D:/WorkBench/mutlicase/case1/tempsize.sf
+/file/import/cad yes D:/WorkBench/mutlicase/case1/rocket.scdoc no yes 40 yes mm ok
+/objects/volumetric-regions/compute *myfluideeclosuretobecuted* no
+/objects/volumetric-regions/rename * *myfluideeclosuretobecuted* *myfluideeclosuretobecuted* myfluid
+/objects/volumetric-regions/change-type *myfluideeclosuretobecuted* * () fluid
+/boundary/manage/type inlet* () mass-flow-inlet
+/boundary/manage/type outlet* () pressure-outlet
+/objects/volumetric-regions/scoped-prism/set/create control-1 aspect-ratio 8 5 1.2 myfluideeclosuretobecutedcomponent:myfluideeclosuretobecutedcomponent-myfluideeclosuretobecuted1 fluid-regions selected-labels *wall*
+/mesh/auto-mesh * no  scoped  pyramids hexcore  yes
+/report/cell-quality-limits *()
+/file/write-mesh D:/WorkBench/mutlicase/case1/rocket.msh
+/switch-to-solution-mode yes
+
+/define/models/solver/density-based-implicit yes
+/define/units length mm
+/define/models/energy? yes
+/define/models/viscous/ke-realizable? yes
+/define/models/viscous/near-wall-treatment enhanced-wall-treatment? yes quit
+
+/define/materials/copy fluid air gas
+/define/boundary-conditions/set/fluid myfluid () material yes gas quit quit
+/define/materials/change-create gas gas yes ideal-gas yes piecewise-linear 3 286.2 64.2 296.2 74.2 yes  kinetic-theory yes  sutherland three-coefficient-method 1.75e-5 273.11 110.56 no no no
+
+/define/operating-conditions/operating-pressure 0
+
+/define/boundary-conditions/set/mass-flow-inlet *inlet_mass_flow_rate* () flow-spec yes mass-flow no 50 supersonic-or-initial-gauge-pressure no 1  ke-spec no yes  turb-intensity 2 turb-length-scale 1000 t0 no 299 quit
+/define/boundary-conditions/set/pressure-outlet *outlet_pressure* () ke-spec no yes gauge-pressure no 88000 p-profile-multiplier 2 turb-intensity 2 turb-length-scale 45000 t0 no 298 quit
+
+/report/reference-values/pressure 88000
+
+/solve/set/flux-type 1
+/solve/set/gradient-scheme no yes
+/solve/set/discretization-scheme/k 0
+/solve/set/discretization-scheme/amg-c 0
+/solve/set/discretization-scheme/epsilon 0
+
+/solve/monitors/residual/convergence-criteria 0.000001 0.000001 0.000001 0.000001 0.000001 0.000001 0.000001
+
+/solve/report-definitions/add mass-flow-rate  flux-massflow zone-names  *outlet_pressure*  *inlet_mass* () average-over 3 report-type flux-massflow quit
+/solve/report-files/add report-file-0 frequency 2 report-defs mass-flow-rate () quit
+/solve/report-plots/add mass-flow-rate frequency 2 report-defs mass-flow-rate () quit
+
+
+/file/auto-save/data-frequency 2 retain-most-recent-files yes max-files 10 root-name D:/WorkBench/mutlicase/case1/rocket
+
+/solve/initialize/hyb-initialization
+
+/solve/set/number-of-iterations 1000
+/solve/set/reporting-interval 10
+/define/profiles/update-interval 10
+
+/solve/set/solution-steering yes \"transonic\" yes yes
+/solve/set/set-solution-steering 100 0 20 5 200 0.75 4 100 200 400 500 0.75 yes
+/file/write-case D:/WorkBench/mutlicase/case1/rocket.cas.h5

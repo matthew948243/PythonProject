@@ -1,0 +1,60 @@
+/file/import/cad-options/tessellation  cfd-surface-mesh no {minSzie_global_mesh(网格全局最小尺寸)} {maxSzie_global_mesh(网格全局最大尺寸)} {curvature_Normal_Angle(曲率法向角)} no no
+/file/import/cad yes  {rocket_file_path(火箭模型路径)} yes {feature_Angle(特征角)} yes mm
+/scoped-sizing/delete-size-field
+/scoped-sizing/create control-1 boi object-faces yes yes *boi* {boiSize_boi(加密最大尺寸)} 1.2
+/scoped-sizing/compute
+/file/write-size-field {rockettempsizepath(控制尺寸临时路径)}
+/file/import/cad-options/tessellation  cfd-surface-mesh yes {rockettempsizepath(控制尺寸临时路径)}
+/file/import/cad yes {rocket_file_path(火箭模型路径)} no yes {feature_Angle(特征角)} yes mm ok
+/objects/volumetric-regions/compute *myfluideeclosuretobecuted* no
+/objects/volumetric-regions/rename * *myfluideeclosuretobecuted* *myfluideeclosuretobecuted* myfluid
+/objects/volumetric-regions/change-type *myfluideeclosuretobecuted* * () fluid
+/boundary/manage/type inlet* () mass-flow-inlet
+/boundary/manage/type outlet* () pressure-outlet
+/objects/volumetric-regions/scoped-prism/set/create control-1 aspect-ratio {firstAspectRatio_mesh(第一层宽高比)} {boundary_number(边界层数)} 1.2 myfluideeclosuretobecutedcomponent:myfluideeclosuretobecutedcomponent-myfluideeclosuretobecuted1 fluid-regions selected-labels *wall*
+/mesh/auto-mesh * no  scoped  pyramids hexcore  yes
+/report/cell-quality-limits *()
+/file/write-mesh {mesh_ok_file_path(网格划分后保存文件)}
+/switch-to-solution-mode yes
+
+/define/models/solver/density-based-implicit yes
+/define/units length mm
+/define/models/energy? yes
+/define/models/viscous/ke-realizable? yes
+/define/models/viscous/near-wall-treatment enhanced-wall-treatment? yes quit
+
+/define/materials/copy fluid air gas
+/define/boundary-conditions/set/fluid myfluid () material yes gas quit quit
+/define/materials/change-create gas gas yes ideal-gas yes piecewise-linear {gas_Cp(燃气比热示例:3(个点) 286.2 64.2 296.2 74.2)} yes  kinetic-theory yes  sutherland three-coefficient-method 1.75e-5 273.11 110.56 no no no
+
+/define/operating-conditions/operating-pressure 0
+
+/define/boundary-conditions/set/mass-flow-inlet *inlet_mass_flow_rate* () flow-spec yes mass-flow no {mass_flow_rate(质量流率)} supersonic-or-initial-gauge-pressure no {supersonic_initial_gauge_pressure_inlet(超音速/初始表压力)}  ke-spec no yes  turb-intensity {turb_intensity_inlet(湍流强度)} turb-length-scale {turb_length_scale_inlet(入口湍流粘度比)} t0 no {thermal_mass_flow_inlet(入口总质量)} quit
+/define/boundary-conditions/set/pressure-outlet *outlet_pressure* () ke-spec no yes gauge-pressure no {gauge_pressure(出口表压力)} p-profile-multiplier {p_profile_multiplier(压力离散分布放大)} turb-intensity {turb_intensity_outlet(出口回流湍流强度)} turb-length-scale {turb_length_scale_outlet(回流湍流长度尺寸)} t0 no {thermal_mass_flow_outlet(出口回流总温度)} quit
+
+/report/reference-values/pressure {reference_values_pressure(参考值压力)}
+
+/solve/set/flux-type 1
+/solve/set/gradient-scheme no yes
+/solve/set/discretization-scheme/k 0
+/solve/set/discretization-scheme/amg-c 0
+/solve/set/discretization-scheme/epsilon 0
+
+/solve/monitors/residual/convergence-criteria 0.000001 0.000001 0.000001 0.000001 0.000001 0.000001 0.000001
+
+/solve/report-definitions/add mass-flow-rate  flux-massflow zone-names  *outlet_pressure*  *inlet_mass* () average-over {gat_data_every_mass_flow_rate(质量报告平均迭代值)} report-type flux-massflow quit
+/solve/report-files/add report-file-0 frequency {frequency_mass_flow_rate(报告获取频率)} report-defs mass-flow-rate () quit
+/solve/report-plots/add mass-flow-rate frequency {frequency_mass_flow_rate(报告获取频率)} report-defs mass-flow-rate () quit
+
+
+/file/auto-save/data-frequency {save_data_file_every_interations(自动保存文件频率)} retain-most-recent-files yes max-files {maximum_number_od_data_files(结果文件最大数量)} root-name {save_data_file_name(自动保存文件名)}
+
+/solve/initialize/hyb-initialization
+
+/solve/set/number-of-iterations {number_of_iterations(迭代次数)}
+/solve/set/reporting-interval {reporting_interval(报告间隔)}
+/define/profiles/update-interval {profile_update_interval(离散分布数据更新间隔)}
+
+/solve/set/solution-steering yes \"transonic\" yes yes
+/solve/set/set-solution-steering 100 0 20 {steering_courant_number_initial(库朗数初始化值)} {steering_courant_number_maximum(库朗数最大值)} 0.75 4 100 200 400 500 0.75 yes
+/file/write-case {write_case_name(最终case文件路径)}

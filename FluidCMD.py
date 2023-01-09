@@ -1,9 +1,11 @@
+
+#在该版本中/file/write-size-field "D:/WorkBench/SimpleModel/tempsize.sf" 没有OK 并且文件不需要加引号
 cmdCommand="""
 /file/import/cad-options/tessellation  cfd-surface-mesh no 0.5 5 18 no no
 /file/import/cad yes "D:/WorkBench/SimpleModel/rocket.scdoc" yes 40 yes mm
 /scoped-sizing/create "control-1" boi object-faces yes yes *boi* 8 1.2
 /scoped-sizing/compute
-/file/write-size-field "D:/WorkBench/SimpleModel/tempsize.sf" ok
+/file/write-size-field "D:/WorkBench/SimpleModel/tempsize.sf" 
 /file/import/cad-options/tessellation  cfd-surface-mesh yes "D:/WorkBench/SimpleModel/tempsize.sf"
 /file/import/cad yes "D:/WorkBench/SimpleModel/rocket.scdoc" no yes 40 yes mm ok
 /objects/volumetric-regions/compute *myfluideeclosuretobecuted* no

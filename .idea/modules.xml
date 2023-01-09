@@ -4,8 +4,14 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../OpenCV01/.idea/OpenCV01.iml" filepath="$PROJECT_DIR$/../OpenCV01/.idea/OpenCV01.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/PythonProject.iml" filepath="$PROJECT_DIR$/.idea/PythonProject.iml" />
+      <module fileurl="file://E:/Learning/PySide/QML01/.idea/QML01.iml" filepath="E:/Learning/PySide/QML01/.idea/QML01.iml" />
       <module fileurl="file://$PROJECT_DIR$/../WorbenchConnect/.idea/WorbenchConnect.iml" filepath="$PROJECT_DIR$/../WorbenchConnect/.idea/WorbenchConnect.iml" />
       <module fileurl="file://$PROJECT_DIR$/../pythonOpenCv/.idea/pythonOpenCv.iml" filepath="$PROJECT_DIR$/../pythonOpenCv/.idea/pythonOpenCv.iml" />
+      <module fileurl="file://E:/Learning/PySide/pythonProject/.idea/pythonProject.iml" filepath="E:/Learning/PySide/pythonProject/.idea/pythonProject.iml" />
+      <module fileurl="file://E:/Learning/PySide/pythonProject1/.idea/pythonProject1.iml" filepath="E:/Learning/PySide/pythonProject1/.idea/pythonProject1.iml" />
+      <module fileurl="file://E:/Learning/PySide/pythonProject2/.idea/pythonProject2.iml" filepath="E:/Learning/PySide/pythonProject2/.idea/pythonProject2.iml" />
+      <module fileurl="file://E:/Learning/PySide/pythonProject3/.idea/pythonProject3.iml" filepath="E:/Learning/PySide/pythonProject3/.idea/pythonProject3.iml" />
+      <module fileurl="file://E:/Learning/PySide/pythonProject4/.idea/pythonProject4.iml" filepath="E:/Learning/PySide/pythonProject4/.idea/pythonProject4.iml" />
     </modules>
   </component>
 </project>
