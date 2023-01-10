@@ -9,10 +9,10 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 import socket
 import getpass
-import xlrd
-import UIVaribles
-import re
-
+import FluentConnect as FLC
+# pyinstaller 打包py文件成exe文件，执行打包后的程序，经常会出现程序使用的配置文件无法关联，或者，在打包后的路径下运行正常，
+# 但是将打包后的程序放到其它路径下就有问题。
+# 这些现象都很有可能是因为程序使用的文件路径发生改变产生的，因此在打包时候我们需要根据执行路径进行路径“冻结”。
 if hasattr(sys, 'frozen'):
     os.environ['PATH'] = sys._MEIPASS + ";" + os.environ['PATH']
 
@@ -25,6 +25,9 @@ import xmloperation as XML
 
 
 class ACTWind(QMainWindow):
+    signal_run = pyqtSignal(QTextEdit, int)
+
+    # signal_multi = pyqtSignal(QTextEdit)
     def __init__(self, parent=None):
         super(ACTWind, self).__init__(parent)
         # super().__init__(parent)
@@ -34,30 +37,81 @@ class ACTWind(QMainWindow):
         self.ui = w.Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("流体仿真界面")
-        tree = XML.read_xml("config.xml")
-
-        nodes = XML.find_nodes(tree, "defaultProjectPath")
-        self.defaultProjectPath = nodes[0].text.replace("\\", "/")
-        self.ui.projectPathLinedit.setText(self.defaultProjectPath)
-
-        nodes = XML.find_nodes(tree, "defaultRocketPath")
-        self.defaultRocketPath = nodes[0].text.replace("\\", "/")
-        self.ui.rocketPathLinedit.setText(self.defaultRocketPath)
-
-        nodes = XML.find_nodes(tree, "raw_model")
-        self.raw_model = nodes[0].text.replace("\\", "/")
-        self.ui.rawmodellineEdit.setText(self.raw_model)
-
+        self.ui.rawmodellineEdit.setText(self.getxmlnodetext("raw_model"))
+        self.ui.projectPathLinedit.setText(self.getxmlnodetext("defaultProjectPath"))
+        self.ui.rocketPathLinedit.setText(self.getxmlnodetext("defaultRocketPath"))
+        self.ui.multiCasesExcellineEdit.setText(self.getxmlnodetext("multicase_excel_path"))
         self.temppath = (self.GetUserInfo()[0] + "\\myrockettemp.bat").replace("\\", "/")
+
+        self.fluentcase = self.createFluentCase()
+        self.t1 = QThread()
+        self.fluentcase.moveToThread(self.t1)
+        self.signal_run.connect(self.fluentcase.run)
+        self.t1.start()
+
+        # self.ui.startBtn.clicked.connect(self.onrunSingle)
+
+        # self.t2=QThread()
+        # self.fluentcase.moveToThread(self.t1)
+        # # self.signal_multi.connect(self.fluentcase.run_multi_cases)
+        # # self.ui.multiCaseBtn.clicked.connect(self.onrunMulti)
+        # # self.fluentcase.finishFlent.connect(self.on_destroyed)
+
+        self.destroyed.connect(self.on_destroyed)
+
+    def onrunSingle(self):
+        # print("hello")
+        if (self.ui.projectPathLinedit.text() == "") or (self.ui.rocketPathLinedit.text() == ""):
+            QMessageBox.critical(self, "输入信息缺失", "请确保\"工程文件路径和火箭模型路径均不为空\"")
+            return
+        self.rocket_SCdoc = str(os.path.dirname(self.ui.rocketPathLinedit.text().replace("\\", "/")))
+        path = self.ui.rocketPathLinedit.text().replace("\\", "/")
+
+        print("hello")
+
+    def onrunMulti(self):
+        if str(self.ui.multiCasesExcellineEdit.text()) == "":
+            QMessageBox.critical(self, "输入信息缺失", "请确保\"多工况输入文件\"路径不为空")
+            return
+
+        path = self.ui.rocketPathLinedit.text().replace("\\", "/")
+        if path == "":
+            return
+        self.signal_multi.emit(self.ui.textEdit)
+        self.t1.start()
+
+    @pyqtSlot()
+    def on_destroyed(self):
+        self.t1.quit()
+        self.t1.wait()
+        self.t1.deleteLater()
+
     def __str__(self):
         return "mand"
-    #反写新到xml中
-    def modifynodetext(self,nodepath,newStr):
+
+    def getxmlnodetext(self, nodename):
+        tree = XML.read_xml("config.xml")
+        nodes = XML.find_nodes(tree, nodename)
+        nodetext = nodes[0].text.replace("\\", "/")
+        return nodetext
+
+    def createFluentCase(self):
+
+        flucase = FLC.FluentCase(self.ui.projectPathLinedit.text().replace("\\", "/"),
+                                 self.ui.multiCasesExcellineEdit.text().replace("\\", "/"),
+                                 self.getxmlnodetext("workbenchpath"),
+                                 self.getxmlnodetext("fluentpath")
+                                 )
+        return flucase
+
+    # 反写新到xml中
+    def modifynodetext(self, nodepath, newStr):
         tree = XML.read_xml("config.xml")
         nodes = XML.find_nodes(tree, nodepath)
-        nodes[0].text=newStr
-        XML.write_xml(tree, "config.xml")
-    # 获得用户目录信息
+        nodes[0].text = newStr
+        XML.write_xml(tree, "config.xml") \
+            # 获得用户目录信息
+
     def GetUserInfo(self):
         user_name = getpass.getuser()
         hostname = socket.gethostname()
@@ -79,69 +133,14 @@ class ACTWind(QMainWindow):
         os.remove(file)
         os.rename("%s.bak" % file, file)
 
-    # 单工况的脚本命令创建
-    def WriteCMDScriptToPy(self):
-        with open("./CMDscript.py", "r", encoding="utf-8") as f1, open("./FluidCMD.jou", "w", encoding="utf-8") as f2:
-            workpath = self.ui.projectPathLinedit.text().replace("\\", "/")
-            rawStr = f1.read()
-            newstr = rawStr.format(
-                minSzie=self.ui.minSizelineEdit.text(), maxSzie=self.ui.maxSizelineEdit.text(),
-                curvature_Normal_Angle=self.ui.curvatureNormalAnglineEdit.text(),
-                feature_Angle=self.ui.featureAnglelineEdit.text(),
-                firstAspectRatio=self.ui.firstAspectRatiolineEdit.text(),
-                boundaryNum=self.ui.boundaryNumlineEdit.text(),
-                boiSize=self.ui.boiSizelineEdit.text(), inletVelocity=self.ui.inletVelocitylineEdit.text(),
-                inletTemp=self.ui.inletTemplineEdit.text(), outPressurelineEdit=self.ui.outPressurelineEdit.text(),
-                iterNum=self.ui.iterNumlineEdit.text(), rocketPath=self.ui.rocketPathLinedit.text().replace("\\", "/"),
-                rockettempsizepath=workpath + "/tempsize.sf",
-                rocketWriteCasePath=workpath + "/" + self.rocket_name + ".cas.h5"
-            )       
-            f2.write(newstr)
-    # 多工况脚本命令创建
-    def WriteMultiCmd(self):
-
-        self.multiRawStr=self.ui.projectPathLinedit.text()+"/workbenchMultiCases.py"
-        with open("./workbenchMultiCasesRawStr.py", "r", encoding="utf-8") as f1, open( self.multiRawStr, "w",
-                                                                                       encoding="utf-8") as f2:
-            workpath = self.ui.projectPathLinedit.text().replace("\\", "/")
-            rawStr = f1.read()
-            mytempsizeFile = workpath + "/tempsize.sf"
-            myRocketDp0File = workpath + "/" + self.rocket_name + "_files/dp0/Geom/DM/Geom.scdoc"
-            myrocketWriteCasePath = workpath + "/" + self.rocket_name + ".cas.h5"
-            myresult_csv = "\"" + workpath + "/" + self.rocket_name + ".csv" + "\""
-            newstr = rawStr.format(
-                totalheight=self.totalheight,
-                rocketMoveHeight= self.rocketMoveHeight,
-                rotationDeg=self.rotationDeg,
-                WBProjectPathWbj=str(self.ui.projectPathLinedit.text() + "/" + self.rocket_name + ".wbpj"),
-                SCDMFilePath=str(self.ui.rocketPathLinedit.text()),
-                feature_Angle=str(self.ui.featureAnglelineEdit.text()),
-                minSzie=str(self.ui.minSizelineEdit.text()),
-                maxSzie=str(self.ui.maxSizelineEdit.text()),
-                curvature_Normal_Angle=str(self.ui.curvatureNormalAnglineEdit.text()),
-                boiSize=str(self.ui.boiSizelineEdit.text()),
-                rockettempsizepath=str(mytempsizeFile),
-                RocketDp0File=str(myRocketDp0File),
-                firstAspectRatio=str(self.ui.firstAspectRatiolineEdit.text()),
-                boundaryNum=str(self.ui.boundaryNumlineEdit.text()),
-                inletVelocity=str(self.ui.inletVelocitylineEdit.text()),
-                inletTemp=str(self.ui.inletTemplineEdit.text()),
-                outPressurelineEdit=str(self.ui.outPressurelineEdit.text()),
-                iterNum=str(self.ui.iterNumlineEdit.text()),
-                rocketWriteCasePath=str(myrocketWriteCasePath),
-                nullPath="{}",
-                result_csv=str(myresult_csv)
-            )
-            f2.write(newstr)
-
     # 选择原始模型文件的按钮事件
     @pyqtSlot()
     def on_rawmodelButton_clicked(self):
         rocketpath, fiter = QFileDialog.getOpenFileName(self, "请选择未处理的原始模型", self.raw_model)
         self.ui.rawmodellineEdit.setText(rocketpath)
-        if rocketpath=="":
+        if rocketpath == "":
             return
-        self.modifynodetext("raw_model",rocketpath.replace("\\","/"))
+        self.modifynodetext("raw_model", rocketpath.replace("\\", "/"))
 
     # 打开spaceclaim程序的按钮事件
     @pyqtSlot()
@@ -180,25 +179,26 @@ DocumentOpen.Execute("{0}", importOptions)
     def on_projectPathBtn_clicked(self):
         path = QFileDialog.getExistingDirectory(self, "请选择一个文件夹", self.defaultProjectPath)
         self.ui.projectPathLinedit.setText(path.replace("\\", "/"))
-        if path=="":
+        if path == "":
             return
         self.modifynodetext("defaultProjectPath", path.replace("\\", "/"))
-        self.defaultProjectPath=self.ui.projectPathLinedit.text()
+        self.defaultProjectPath = self.ui.projectPathLinedit.text()
+
     # 选择火箭模型处理完后的保存目录事件
     @pyqtSlot()
     def on_rocketPathBtn_clicked(self):
         path, filter = QFileDialog.getSaveFileName(self, "请选择文件保存路径", self.defaultRocketPath, "*.scdoc")
         self.ui.rocketPathLinedit.setText(path.replace("\\", "/"))
-        if path=="":
+        if path == "":
             return
         self.modifynodetext("defaultRocketPath", path.replace("\\", "/"))
         self.set_rocket_name()
+
     def set_rocket_name(self):
         self.rocket_SCdoc = str(os.path.dirname(self.ui.rocketPathLinedit.text().replace("\\", "/")))
         path = self.ui.rocketPathLinedit.text().replace("\\", "/")
         ret = os.path.splitext(path)[0]
         self.rocket_name = str(os.path.basename(ret))
-
 
     # 创建系统并进行模型预处理的按钮事件
     @pyqtSlot()
@@ -229,102 +229,41 @@ DocumentOpen.Execute("{0}", importOptions)
         if (self.ui.projectPathLinedit.text() == "") or (self.ui.rocketPathLinedit.text() == ""):
             QMessageBox.critical(self, "输入信息缺失", "请确保\"工程文件路径和火箭模型路径均不为空\"")
             return
-        self.Modify_UIVaribles_File("minSzie", float(self.ui.minSizelineEdit.text()))
-        self.Modify_UIVaribles_File("maxSzie", self.ui.maxSizelineEdit.text())
-        self.Modify_UIVaribles_File("curvature_Normal_Angle", self.ui.curvatureNormalAnglineEdit.text())
-        self.Modify_UIVaribles_File("feature_Angle", self.ui.featureAnglelineEdit.text())
-        self.Modify_UIVaribles_File("firstAspectRatio", self.ui.firstAspectRatiolineEdit.text())
-        self.Modify_UIVaribles_File("boundaryNum", self.ui.boundaryNumlineEdit.text())
-        self.Modify_UIVaribles_File("boiSize", self.ui.boiSizelineEdit.text())
-        self.Modify_UIVaribles_File("inletVelocity", self.ui.inletVelocitylineEdit.text())
-        self.Modify_UIVaribles_File("inletTemp", self.ui.inletTemplineEdit.text())
-        self.Modify_UIVaribles_File("outPressurelineEdit", self.ui.outPressurelineEdit.text())
-        self.Modify_UIVaribles_File("iterNum", self.ui.iterNumlineEdit.text())
-
         self.rocket_SCdoc = str(os.path.dirname(self.ui.rocketPathLinedit.text().replace("\\", "/")))
-
         path = self.ui.rocketPathLinedit.text().replace("\\", "/")
         ret = os.path.splitext(path)[0]
         self.rocket_name = str(os.path.basename(ret))
-
-        self.WriteCMDScriptToPy()
-        tree = XML.read_xml("config.xml")
-        nodes = XML.find_nodes(tree, "fluentpath")
-        fluentpath = nodes[0].text
-        fluentpath = "\"" + fluentpath + "\"" + " 3ddp -meshing -t6 -i \"./FluidCMD.jou\""
-        subprocess.Popen(fluentpath, shell=True, stdout=None, stderr=None)
-
+        self.signal_run.emit(self.ui.textEdit, 1)
 
     # 进行多工况计算的按钮事件
-    #禁止切换python版本为3.10,应该用3.7一下
+    # 禁止切换python版本为3.10,应该用3.7一下
     @pyqtSlot()
     def on_multiCaseBtn_clicked(self):
-        # if str(self.ui.multiCasesExcellineEdit.text()) == "":
-        #     QMessageBox.critical(self, "输入信息缺失", "请确保\"多工况输入文件\"路径不为空")
-        #     return
-        # self.readMultiCaseExcel(self.ui.multiCasesExcellineEdit.text().replace("\\", "/"))
-        #
-        # path = self.ui.rocketPathLinedit.text().replace("\\", "/")
-        # if path == "":
-        #     return
-        #
-        # self.rocket_SCdoc = str(os.path.dirname(path))
-        # path = self.ui.rocketPathLinedit.text().replace("\\", "/")
-        # ret = os.path.splitext(path)[0]
-        # self.rocket_name = str(os.path.basename(ret))
+        if str(self.ui.multiCasesExcellineEdit.text()) == "":
+            QMessageBox.critical(self, "输入信息缺失", "请确保\"多工况输入文件\"路径不为空")
+            return
 
+        path = self.ui.rocketPathLinedit.text().replace("\\", "/")
+        if path == "":
+            return
 
-        # self.WriteMultiCmd()
-
-        # tree = XML.read_xml("config.xml")
-        #
-        # nodes = XML.find_nodes(tree, "worbenchpath")
-        # worbenchpath = nodes[0].text
-        # cmdBat = self.defaultProjectPath + "/run.bat"
-
-        worbenchpath = "D:/Program Files/ANSYS Inc/v202/Framework/bin/Win64/RunWB2.exe"
-        cmdBat="D:/WorkBench/newtest1/run.bat"
-
-        # cmdstr = "\"" + worbenchpath + "\"" + " -I -R "+self.multiRawStr
-        cmdstr = "\"" + worbenchpath + "\"" + " -I -R " + "D:/WorkBench/newtest1/workbenchMultiCases.py"
-
-        # with open(cmdBat, "w",encoding="utf-8") as f2:
-        #     f2.write(cmdstr)
-        # os.system(cmdBat)
-        opt=0
-        if (opt==0):
-            subprocess.Popen(cmdBat, shell=True, stdout=None, stderr=None)
-        elif (opt==1):
-            subprocess.Popen(cmdstr, shell=True, stdout=None, stderr=None)
-        else:
-            subprocess.Popen("\"D:\\Program Files\\ANSYS Inc\\v202\Framework\\bin\Win64\RunWB2.exe\" -I -R \"D:/WorkBench/newtest1/workbenchMultiCases.py\"", shell=True, stdout=None, stderr=None)
-
-
-    # 读取多工况Excel文件
-    def readMultiCaseExcel(self, path):
-        data = xlrd.open_workbook(path)
-        table = data.sheets()[0]
-        # table = data.sheet_by_index(sheet_indx)  # 通过索引顺序获取
-        # table = data.sheet_by_name(sheet_name)  # 通过名称获
-        nrows = table.nrows
-        totalheight_list = [table.cell_value(i, 0) for i in range(1, nrows)]
-        self.Modify_UIVaribles_File("totalheight", str(totalheight_list))
-        self.totalheight = str(totalheight_list)
-
-        rocketMoveHeight_list = [table.cell_value(i, 1) for i in range(1, nrows)]
-        self.Modify_UIVaribles_File("rocketMoveHeight", str(rocketMoveHeight_list))
-        self.rocketMoveHeight = str(rocketMoveHeight_list)
-
-        rotationDeg_list = [table.cell_value(i, 2) for i in range(1, nrows)]
-        self.Modify_UIVaribles_File("rotationDeg", str(rotationDeg_list))
-        self.rotationDeg = str(rotationDeg_list)
+        self.rocket_SCdoc = str(os.path.dirname(path))
+        path = self.ui.rocketPathLinedit.text().replace("\\", "/")
+        ret = os.path.splitext(path)[0]
+        self.rocket_name = str(os.path.basename(ret))
+        # self.createFluentCase().run_multicase()
+        self.signal_run.emit(self.ui.textEdit, 2)
+        # subprocess.Popen("\"D:\\Program Files\\ANSYS Inc\\v202\Framework\\bin\Win64\RunWB2.exe\" -I -R \"D:/WorkBench/newtest1/workbenchMultiCases.py\"", shell=True, stdout=None, stderr=None)
 
     # 读取多工况文件的按钮事件
     @pyqtSlot()
     def on_multiCasesExcelBtn_clicked(self):
         path, filter = QFileDialog.getOpenFileName(self, "请选择多工况输入文件,Excel文件",
-                                            "./", "*.xls;*.xlsx")
+                                                   "./", "*.xls;*.xlsx")
         self.ui.multiCasesExcellineEdit.setText(path)
+        if path == "":
+            return
+        self.modifynodetext("multicase_excel_path", path.replace("\\", "/"))
 
     # 结束workbench后台程序
     def KillWorkbench(self):
@@ -367,15 +306,15 @@ DocumentOpen.Execute("{0}", importOptions)
     def writexml(cls):
         root = ET.Element('Root')
         tree = ET.ElementTree(root)
-        worbenchpath = Element("worbenchpath")
-        worbenchpath.text = r"D:\Program Files\ANSYS Inc\v212\Framework\bin\Win64\RunWB2.exe"
+        workbenchpath = Element("workbenchpath")
+        workbenchpath.text = r"D:\Program Files\ANSYS Inc\v212\Framework\bin\Win64\RunWB2.exe"
         fluentpath = Element("fluentpath")
         fluentpath.text = r"D:\Program Files\ANSYS Inc\v212\fluent\ntbin\win64\fluent.exe"
         defaultProjectPath = Element("defaultProjectPath")
         defaultProjectPath.text = r"D:\WorkBench\SimpleModel"
         defaultRocketPath = Element("defaultRocketPath")
         defaultRocketPath.text = r"D:\WorkBench\SimpleModel"
-        root.append(worbenchpath)
+        root.append(workbenchpath)
         root.append(fluentpath)
         root.append(defaultProjectPath)
         root.append(defaultRocketPath)
@@ -389,50 +328,3 @@ if __name__ == "__main__":
     mainwind.show()
     # print(mainwind)
     sys.exit(qApp.exec_())
-
-#
-#
-#
-# # pat="(\{[\s*\u4e00-\u9fa5\s*\w+\s*]{1,}\}){1,}"
-# pat = "\{.*?\}"
-# myst="scoped-sizing/create  boi object-faces yes yes *boi* {boiSize} 1.2{ 何时去额为 we}kjk"
-# print(re.findall(pat, myst))
-# myst="""
-# /scoped-sizing/create \"control-1\" boi object-faces yes yes *boi* {boiSize} 1.2
-# /scoped-sizing/compute
-# /file/write-size-field \"{rockettempsizepath}\" ok
-# /file/import/cad-options/tessellation  cfd-surface-mesh yes \"{rockettempsizepath}\"
-# /file/import/cad yes \"{RocketDp0File}\" no yes 40 yes mm ok
-# /objects/volumetric-regions/compute *myfluideeclosuretobecuted* no
-# /objects/volumetric-regions/rename * *myfluideeclosuretobecuted* *myfluideeclosuretobecuted* myfluid
-# /objects/volumetric-regions/change-type *myfluideeclosuretobecuted* * () fluid
-# /boundary/manage/type inlet* () velocity-inlet
-# /boundary/manage/type outlet* () pressure-outlet
-# /objects/volumetric-regions/scoped-prism/set/create "control-1" aspect-ratio {firstAspectRatio} {boundaryNum} 1.2 myfluideeclosuretobecutedcomponent:myfluideeclosuretobecutedcomponent-myfluideeclosuretobecuted1 fluid-regions selected-labels *wall*
-# /mesh/auto-mesh * no  scoped  pyramids hexcore  yes
-# /report/cell-quality-limits *()
-# /switch-to-solution-mode yes
-# /define/models/viscous/ke-realizable? yes
-# /define/models/viscous/near-wall-treatment enhanced-wall-treatment? yes quit
-# /define/boundary-conditions/fluid myfluid no no no no no 0 no 0 no 0 no 0 no 0 no 0 no no no no no
-# /define/boundary-conditions/set/velocity-inlet *inlet_velocity* () vmag no {inletVelocity} quit
-# /define/models/energy? yes no no no yes
-# /define/boundary-conditions/set/velocity-inlet *inlet_velocity* () temperature no {inletTemp} quit
-# /define/boundary-conditions/set/pressure-outlet *outlet_pressure* () gauge-pressure no {outPressurelineEdit} quit
-# /solve/report-definitions/add out-vel-rdef surface-areaavg surface-names *outlet_pressure* () field velocity-magnitude quit
-# /solve/report-plots/add out-vel-rplot report-defs out-vel-rdef () quit
-# /display/surface/plane-surface xz-plane-0 zx-plane 0
-# /file/write-case-data "{rocketWriteCasePath}" ok
-# /solve/iterate {iterNum}
-# /display/objects/create contour vel-mid surfaces-list xz-plane-0 () field velocity-magnitude quit
-# """
-# print(re.findall(pat, myst))
-# print("heolllllllllllllllllllllllllllllll")
-# print(re.match('www', 'www.runoob.com').span())  # 在起始位置匹配
-# print(re.match('com', 'www.runoob.com'))
-#
-# phone = "2004-959-559 # 这是一个电话号码"
-#
-# # 删除注释
-# num = re.sub(r'#.*$', "", phone)
-# print("电话号码 : ", num)

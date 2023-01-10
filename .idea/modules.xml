@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://E:/Learning/PySide/MultiWindSignal/.idea/MultiWindSignal.iml" filepath="E:/Learning/PySide/MultiWindSignal/.idea/MultiWindSignal.iml" />
+      <module fileurl="file://E:/Learning/PySide/MyMainWindow/.idea/MyMainWindow.iml" filepath="E:/Learning/PySide/MyMainWindow/.idea/MyMainWindow.iml" />
       <module fileurl="file://$PROJECT_DIR$/../OpenCV01/.idea/OpenCV01.iml" filepath="$PROJECT_DIR$/../OpenCV01/.idea/OpenCV01.iml" />
+      <module fileurl="file://E:/Learning/PySide/PythonMultiSignal/.idea/PythonMultiSignal.iml" filepath="E:/Learning/PySide/PythonMultiSignal/.idea/PythonMultiSignal.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/PythonProject.iml" filepath="$PROJECT_DIR$/.idea/PythonProject.iml" />
       <module fileurl="file://E:/Learning/PySide/QML01/.idea/QML01.iml" filepath="E:/Learning/PySide/QML01/.idea/QML01.iml" />
       <module fileurl="file://$PROJECT_DIR$/../WorbenchConnect/.idea/WorbenchConnect.iml" filepath="$PROJECT_DIR$/../WorbenchConnect/.idea/WorbenchConnect.iml" />

@@ -1,6 +1,6 @@
 #SCDM File
 RawRocketModel="D:/WorkBench/SimpleModel/asm0001.asm.1"
-WBProjectPath="D:/WorkBench/SimpleModel"
+WBProjectPath="D:/WorkBench/mutlicase"
 SCDMFilePath="D:/WorkBench/SimpleModel/rocket.scdoc"
 minSzie=5.0
 

@@ -37,16 +37,21 @@ import psutil
 import win32api
 import win32gui
 from win32con import WM_INPUTLANGCHANGEREQUEST
-
-class FluentCase():
-    def __init__(self,path,multicase_excel_path):
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+class FluentCase(QObject):
+    finishFlent=pyqtSignal()
+    def __init__(self,workpath,multicase_excel_path,worbenchpath,fluentpath,parent=None):
+        super().__init__(parent)
         # 定义Fluent的启动位置，例如2020R1版本
-        self.path=path
+        self.workpath=workpath
         self.multicase_excel_path=multicase_excel_path
-        ansysPath = pathlib.Path(os.environ["AWP_ROOT202"])
-        self.fluentExe = str(ansysPath / "fluent" / "ntbin" / "win64" / "fluent.exe")
+        # ansysPath = pathlib.Path(os.environ["AWP_ROOT202"])
+        # self.fluentExe = str(ansysPath / "fluent" / "ntbin" / "win64" / "fluent.exe")
+        self.fluentExe= fluentpath
+        self.worbenchExe = worbenchpath
         # 定义工作目录
-        self.workPath = pathlib.Path(path)
+        self.workPath = pathlib.Path(workpath)
         self.aasFilePath = self.workPath / "aaS_FluentId.txt"
     def change_language(lang="EN"):
         """
@@ -210,14 +215,14 @@ class FluentCase():
         table = data.sheets()[0]
         cols = table.ncols
         return cols
-    def run_fluent(self, colnum):
+    def run_fluent(self, colnum,textEdit):
         cmd = self.getfluentjou("./newFluentJou.txt", "./fluent_raw_str.txt", self.multicase_excel_path, colnum)
         # 服务器会话连接之前，清除工作目录下存在的aaS*.txt文件
         for file in self.workPath.glob("aaS*.txt"): file.unlink()
 
-        self.deletefilebyend(self.path,".trn")
+        self.deletefilebyend(self.workpath, ".trn")
 
-        self.deletefilebyend(self.path,".log")
+        self.deletefilebyend(self.workpath, ".log")
 
         # fluentpath = "\"" + fluentpath + "\"" + " 3ddp -meshing -t6 -i \"./FluidCMD.jou\""
         # 启动线程调用Fluent软件
@@ -244,20 +249,29 @@ class FluentCase():
             for cm in cmd.split("\n"):
                 result = scheme.doMenuCommandToString(cm)
                 print(result)
+                textEdit.append(result)
         except Exception as  e:
             print(e.args)
-        print("game over")
+            textEdit.append(e.args)
+        # print("Over")
+        textEdit.append("第%d列工况运行完毕"%(colnum))
         fluentUnit.terminate()
 
-    def run_multicase(self):
-        nums=self.get_excel_cols()
+    def run_multi_cases(self, textEdit):
+        nums=self.get_excel_cols(self.multicase_excel_path)
         for i in range(1, nums):
-            self.run_fluent(i)
-    def run_single_case(self):
-        self.run_fluent(1)
+            self.run_fluent(i,textEdit)
+        self.finishFlent.emit()
+    def run_single_case(self,textEdit):
+        self.run_fluent(1,textEdit)
+        self.finishFlent.emit()
 
-
-fluentcase = FluentCase(r"D:\WorkBench\mutlicase",r'D:\WorkBench\SimpleModel\fluent.xls')
-
-fluentcase.run_single_case()
+    def run(self,textEdit,index):
+        if(index==1):
+            self.run_fluent(1,textEdit)
+        elif(index==2):
+            self.run_multi_cases(textEdit)
+# fluentcase = FluentCase(r"D:\WorkBench\mutlicase",r'D:\WorkBench\SimpleModel\fluent.xls')
+#
+# fluentcase.run_single_case()
 
