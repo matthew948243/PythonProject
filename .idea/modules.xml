@@ -2,13 +2,16 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../opencvdown/Image2Text/.idea/Image2Text.iml" filepath="$PROJECT_DIR$/../../opencvdown/Image2Text/.idea/Image2Text.iml" />
       <module fileurl="file://E:/Learning/PySide/MultiWindSignal/.idea/MultiWindSignal.iml" filepath="E:/Learning/PySide/MultiWindSignal/.idea/MultiWindSignal.iml" />
       <module fileurl="file://E:/Learning/PySide/MyMainWindow/.idea/MyMainWindow.iml" filepath="E:/Learning/PySide/MyMainWindow/.idea/MyMainWindow.iml" />
       <module fileurl="file://$PROJECT_DIR$/../OpenCV01/.idea/OpenCV01.iml" filepath="$PROJECT_DIR$/../OpenCV01/.idea/OpenCV01.iml" />
       <module fileurl="file://E:/Learning/PySide/PythonMultiSignal/.idea/PythonMultiSignal.iml" filepath="E:/Learning/PySide/PythonMultiSignal/.idea/PythonMultiSignal.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/PythonProject.iml" filepath="$PROJECT_DIR$/.idea/PythonProject.iml" />
       <module fileurl="file://E:/Learning/PySide/QML01/.idea/QML01.iml" filepath="E:/Learning/PySide/QML01/.idea/QML01.iml" />
+      <module fileurl="file://E:/Learning/PySide/TestPythonFunc/.idea/TestPythonFunc.iml" filepath="E:/Learning/PySide/TestPythonFunc/.idea/TestPythonFunc.iml" />
       <module fileurl="file://$PROJECT_DIR$/../WorbenchConnect/.idea/WorbenchConnect.iml" filepath="$PROJECT_DIR$/../WorbenchConnect/.idea/WorbenchConnect.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../opencvdown/.idea/opencvdown.iml" filepath="$PROJECT_DIR$/../../opencvdown/.idea/opencvdown.iml" />
       <module fileurl="file://$PROJECT_DIR$/../pythonOpenCv/.idea/pythonOpenCv.iml" filepath="$PROJECT_DIR$/../pythonOpenCv/.idea/pythonOpenCv.iml" />
       <module fileurl="file://E:/Learning/PySide/pythonProject/.idea/pythonProject.iml" filepath="E:/Learning/PySide/pythonProject/.idea/pythonProject.iml" />
       <module fileurl="file://E:/Learning/PySide/pythonProject1/.idea/pythonProject1.iml" filepath="E:/Learning/PySide/pythonProject1/.idea/pythonProject1.iml" />

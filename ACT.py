@@ -3,6 +3,7 @@
 # @Author : KeJun 
 # @File : ACT.py
 # D:/WorkBench/PythonProject/rocket/rocket_files/dp0/FFF/DM
+# pyinstaller -F .\ACT.py -p "C:\Program Files\Python37\Lib\site-packages\fluent_corba"
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -10,6 +11,7 @@ from xml.etree.ElementTree import Element
 import socket
 import getpass
 import FluentConnect as FLC
+
 # pyinstaller 打包py文件成exe文件，执行打包后的程序，经常会出现程序使用的配置文件无法关联，或者，在打包后的路径下运行正常，
 # 但是将打包后的程序放到其它路径下就有问题。
 # 这些现象都很有可能是因为程序使用的文件路径发生改变产生的，因此在打包时候我们需要根据执行路径进行路径“冻结”。
@@ -26,12 +28,11 @@ import xmloperation as XML
 
 class ACTWind(QMainWindow):
     signal_run = pyqtSignal(QTextEdit, int)
-
     # signal_multi = pyqtSignal(QTextEdit)
     def __init__(self, parent=None):
         super(ACTWind, self).__init__(parent)
         # super().__init__(parent)
-        self.rocket_name = None
+
         self.rocket_SCdoc = None
         self.spaceclaimpath = None
         self.ui = w.Ui_MainWindow()
@@ -58,7 +59,37 @@ class ACTWind(QMainWindow):
         # # self.fluentcase.finishFlent.connect(self.on_destroyed)
 
         self.destroyed.connect(self.on_destroyed)
+        self.prco = QProcess()
+        self.connect_process()
 
+    def connect_process(self):
+
+        self.prco.readyRead.connect(self.showResult)
+        self.prco.stateChanged.connect(self.showState)
+        self.prco.errorOccurred.connect(self.showError)
+        self.prco.finished.connect(self.showFinished)
+
+    def showState(self,state):
+        print("showState: ")
+        if (state==QProcess.NotRunning):
+            print("没有程序运行")
+        elif (state==QProcess.Starting):
+            print("开始中")
+            self.ui.textEdit.append("spaceclaim已经启动")
+        else:
+            print("运行中")
+            self.ui.textEdit.append("请等待spaceclaim加载......")
+    def showResult(self):
+        codec = QTextCodec.codecForLocale()
+        text="spaceclaim正在加载： "+codec.toUnicode(self.prco.readAll())
+        print(text)
+        self.ui.textEdit.append(text)
+    def showError(self):
+
+        print("显示结果:  ",self.prco.errorString())
+
+    def showFinished(self,exitCode,exit_stattus):
+        print("显示完成：退出代码：",exitCode,"，退出状态:", exit_stattus)
     def onrunSingle(self):
         # print("hello")
         if (self.ui.projectPathLinedit.text() == "") or (self.ui.rocketPathLinedit.text() == ""):
@@ -109,7 +140,7 @@ class ACTWind(QMainWindow):
         tree = XML.read_xml("config.xml")
         nodes = XML.find_nodes(tree, nodepath)
         nodes[0].text = newStr
-        XML.write_xml(tree, "config.xml") \
+        XML.write_xml(tree, "config.xml")
             # 获得用户目录信息
 
     def GetUserInfo(self):
@@ -136,7 +167,8 @@ class ACTWind(QMainWindow):
     # 选择原始模型文件的按钮事件
     @pyqtSlot()
     def on_rawmodelButton_clicked(self):
-        rocketpath, fiter = QFileDialog.getOpenFileName(self, "请选择未处理的原始模型", self.raw_model)
+        raw_modelpath = self.getxmlnodetext("raw_model")
+        rocketpath, fiter = QFileDialog.getOpenFileName(self, "请选择未处理的原始模型", raw_modelpath)
         self.ui.rawmodellineEdit.setText(rocketpath)
         if rocketpath == "":
             return
@@ -145,21 +177,12 @@ class ACTWind(QMainWindow):
     # 打开spaceclaim程序的按钮事件
     @pyqtSlot()
     def on_openSpaceClaimBtn_clicked(self):
-        self.set_rocket_name()
         self.outRocket = self.ui.rocketPathLinedit.text().replace("\\", "/")
         if self.outRocket == "":
             QMessageBox.critical(self, "输入信息缺失", "请选择处理后的模型输出路径")
             return
         with open(self.temppath, "w", encoding="utf-8") as f2:
             f2.write(self.outRocket)
-        self.Modify_UIVaribles_File("WBProjectPath", self.ui.projectPathLinedit.text().replace("\\", "/"), True)
-        self.Modify_UIVaribles_File("SCDMFilePath", self.outRocket, True)
-        self.Modify_UIVaribles_File("RawRocketModel", self.ui.rawmodellineEdit.text(), True)
-        self.Modify_UIVaribles_File("WBProjectPathWbj",
-                                    self.ui.projectPathLinedit.text().replace("\\",
-                                                                              "/") + "/" + self.rocket_name + ".wbpj",
-                                    True)
-
         with open("./spaceclaimRun.py", "w", encoding="utf-8") as f2:
             runscript = """
 importOptions = ImportOptions.Create()
@@ -167,17 +190,23 @@ DocumentOpen.Execute("{0}", importOptions)
             """.format(self.ui.rawmodellineEdit.text())
             f2.write(runscript)
 
-        tree = XML.read_xml("config.xml")
-        nodes = XML.find_nodes(tree, "spaceclaimpath")
-        self.spaceclaimpath = nodes[0].text.replace("\\", "/")
+        self.spaceclaimpath = self.getxmlnodetext("spaceclaimpath")
+
         spaceclaimCmd = "\"" + self.spaceclaimpath + "\"" + " /RunScript=spaceclaimRun.py"
 
-        subprocess.Popen(spaceclaimCmd, shell=True, stdout=None, stderr=None)
+        #subprocess.Popen(spaceclaimCmd, shell=True, stdout=None, stderr=None)
+
+        self.prco.start(spaceclaimCmd)
+
+
+
+
 
     # 选择工程路径的按钮事件
     @pyqtSlot()
     def on_projectPathBtn_clicked(self):
-        path = QFileDialog.getExistingDirectory(self, "请选择一个文件夹", self.defaultProjectPath)
+        defaultProjectPath = self.getxmlnodetext("defaultProjectPath")
+        path = QFileDialog.getExistingDirectory(self, "请选择一个文件夹", defaultProjectPath)
         self.ui.projectPathLinedit.setText(path.replace("\\", "/"))
         if path == "":
             return
@@ -187,18 +216,19 @@ DocumentOpen.Execute("{0}", importOptions)
     # 选择火箭模型处理完后的保存目录事件
     @pyqtSlot()
     def on_rocketPathBtn_clicked(self):
-        path, filter = QFileDialog.getSaveFileName(self, "请选择文件保存路径", self.defaultRocketPath, "*.scdoc")
+
+        defaultProjectPath = self.getxmlnodetext("defaultProjectPath")
+        path, filter = QFileDialog.getSaveFileName(self, "请选择文件保存路径", defaultProjectPath, "*.scdoc")
         self.ui.rocketPathLinedit.setText(path.replace("\\", "/"))
         if path == "":
             return
         self.modifynodetext("defaultRocketPath", path.replace("\\", "/"))
-        self.set_rocket_name()
 
     def set_rocket_name(self):
         self.rocket_SCdoc = str(os.path.dirname(self.ui.rocketPathLinedit.text().replace("\\", "/")))
         path = self.ui.rocketPathLinedit.text().replace("\\", "/")
         ret = os.path.splitext(path)[0]
-        self.rocket_name = str(os.path.basename(ret))
+        return os.path.basename(ret)
 
     # 创建系统并进行模型预处理的按钮事件
     @pyqtSlot()
@@ -232,7 +262,6 @@ DocumentOpen.Execute("{0}", importOptions)
         self.rocket_SCdoc = str(os.path.dirname(self.ui.rocketPathLinedit.text().replace("\\", "/")))
         path = self.ui.rocketPathLinedit.text().replace("\\", "/")
         ret = os.path.splitext(path)[0]
-        self.rocket_name = str(os.path.basename(ret))
         self.signal_run.emit(self.ui.textEdit, 1)
 
     # 进行多工况计算的按钮事件
@@ -250,7 +279,6 @@ DocumentOpen.Execute("{0}", importOptions)
         self.rocket_SCdoc = str(os.path.dirname(path))
         path = self.ui.rocketPathLinedit.text().replace("\\", "/")
         ret = os.path.splitext(path)[0]
-        self.rocket_name = str(os.path.basename(ret))
         # self.createFluentCase().run_multicase()
         self.signal_run.emit(self.ui.textEdit, 2)
         # subprocess.Popen("\"D:\\Program Files\\ANSYS Inc\\v202\Framework\\bin\Win64\RunWB2.exe\" -I -R \"D:/WorkBench/newtest1/workbenchMultiCases.py\"", shell=True, stdout=None, stderr=None)

@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
 <Root>
-	<!--workbench的安装路径-->
+	
 	<workbenchpath>D:\Program Files\ANSYS Inc\v202\Framework\bin\Win64\RunWB2.exe</workbenchpath>
-	<!--fluent的安装路径-->
+	
 	<fluentpath>D:\Program Files\ANSYS Inc\v202\fluent\ntbin\win64\fluent.exe</fluentpath>
-	<!--spaceclaim的安装路径-->
+	
 	<spaceclaimpath>D:\Program Files\ANSYS Inc\v202\SCDM\SpaceClaim.exe</spaceclaimpath>
-	<!--待处理的模型的原始路径-->
+	
 	<raw_model>D:/WorkBench/SimpleModel/asm0001.asm.1</raw_model>
-	<!--本次计算的工程路径-->
+	
 	<defaultProjectPath>D:/WorkBench/mutlicase</defaultProjectPath>
-	<!--本次模型处理后的保存路径-->
-	<defaultRocketPath>D:/WorkBench/SimpleModel/rocket.scdoc</defaultRocketPath>
-	<!--工况文件路径-->
-	<multicase_excel_path>D:/WorkBench/SimpleModel/fluent.xls</multicase_excel_path>
+	
+	<defaultRocketPath>D:/WorkBench/mutlicase/rocket.scdoc</defaultRocketPath>
+	
+	<multicase_excel_path>D:/WorkBench/PythonProject/fluent.xls</multicase_excel_path>
 </Root>
