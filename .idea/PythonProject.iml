@@ -19,5 +19,6 @@
     <orderEntry type="module" module-name="Image2Text" />
     <orderEntry type="module" module-name="opencvdown" />
     <orderEntry type="module" module-name="TestPythonFunc" />
+    <orderEntry type="module" module-name="PaddleOCRPro" />
   </component>
 </module>
